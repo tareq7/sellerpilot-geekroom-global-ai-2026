@@ -1,9 +1,9 @@
 {
-  "name": "sellerpilot-ai",
+  "name": "sellerpilot-geekroom-global-ai-2026",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Stock-aware seller-controlled Amazon/Noon operations copilot",
+  "description": "SellerPilot AI Geek Room Global AI Hackathon 2026 adaptation; challenge-specific prototype pending",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build && node scripts/build-api.mjs",

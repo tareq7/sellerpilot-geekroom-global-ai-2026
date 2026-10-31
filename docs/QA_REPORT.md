@@ -1,3 +1,5 @@
+> **Geek Room 2026 adaptation:** Below is the inherited Meta-era baseline. It does NOT prove event-specific functionality or constitute a new Geek Room submission. See [current checklist](SUBMISSION_CHECKLIST.md).
+
 # Quality report — October 27, 2026
 
 ## Verified state

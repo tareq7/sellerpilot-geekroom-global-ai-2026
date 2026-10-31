@@ -1,4 +1,35 @@
-# SellerPilot AI — intelligence, in control.
+# SellerPilot AI — Geek Room Global AI Hackathon 2026 adaptation
+
+**Status: REGISTERED (solo team created); event-specific prototype NOT SUBMITTED.**
+
+**Organizer:** Geek Room, hosted through HackCulture. **Team:** `sellerpilotgeekroomglobalai2026` (one member). **Problem statements publish November 1, 2026; prototype due November 15; judging November 29.**  
+**This repository:** https://github.com/tareq7/sellerpilot-geekroom-global-ai-2026  
+**Inherited project:** https://github.com/tareq7/sellerpilot-ai — developed for and submitted to the separate Meta Global AI Developer Hackathon in October 2026.
+
+> This repository was cloned with full Git history. The inherited UI, analytics logic, marketing assets, historical video, and existing tests are NOT a Geek Room submission. Any pre-existing code must be disclosed. HackCulture's code of conduct allows prior work only with disclosure of reused code and prior submissions; new qualifying work must be developed in this event window.
+
+## Planned adaptation — challenge selection not yet finalized
+
+After official problem statements go live on November 1, select one that fits stock-aware seller analytics, source-grounded AI research or safe approval-gated commerce workflows. Develop and test a new working prototype within the competition period; record an event-specific demonstration; and submit through HackCulture by November 15.
+
+## Mandatory go/no-go checklist
+
+- [ ] Review the official November 1 problem statements and sponsor/tool requirements.
+- [ ] Select a specific problem statement and write an acceptance-tested technical scope.
+- [ ] Implement the new qualifying functionality, with a diff against the inherited Meta baseline.
+- [ ] Verify all required sponsor tools actually run; no mock integration or unsupported AI claims.
+- [ ] Run tests and build; deploy an accessible, cost-safe working demo.
+- [ ] Replace the historical Meta video with an event-specific proof (keep old one clearly labelled as historical).
+- [ ] Document reused code, prior Meta submission and new work accurately.
+- [ ] Submit the prototype using the official HackCulture submission phase and verify confirmation.
+
+**Original SellerPilot site:** https://sellerpilot-ai-phi.vercel.app — an inherited Meta-era baseline only.
+
+---
+
+## Historical SellerPilot implementation (retained for transparency)
+
+### SellerPilot AI — intelligence, in control.
 
 **An evidence-backed, bilingual marketplace-operations copilot for Amazon.sa and Noon.sa.**
 
@@ -40,8 +71,8 @@ A campaign showing 7× ROAS can be **bad for a business if the advertised SKU ru
 Requirements: Node.js 22+ and npm.
 
 \`\`\`bash
-git clone https://github.com/tareq7/sellerpilot-ai.git
-cd sellerpilot-ai
+git clone https://github.com/tareq7/sellerpilot-geekroom-global-ai-2026.git
+cd sellerpilot-geekroom-global-ai-2026
 npm ci
 npm test
 npm run build
