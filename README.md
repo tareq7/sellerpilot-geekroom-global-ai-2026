@@ -1,8 +1,10 @@
 # SellerPilot AI — Geek Room Global AI Hackathon 2026 adaptation
 
+I want SellerPilot to answer a seller’s question using sources they can check. For this hackathon, I’m planning to connect Tavily search with Bifrost. The existing dashboard is from my earlier project. The new integration and final submission are not ready yet.
+
 **Status: REGISTERED (solo team created); event-specific prototype NOT SUBMITTED.**
 
-**Organizer:** Geek Room, hosted through HackCulture. **Team:** `sellerpilotgeekroomglobalai2026` (one member). **Problem statements publish November 1, 2026; prototype due November 15; judging November 29.**  
+**Organizer:** Geek Room, hosted through HackCulture. **Team:** `sellerpilotgeekroomglobalai2026` (one member). **Prototype due November 15, 2026; judging November 29.**  
 **This repository:** https://github.com/tareq7/sellerpilot-geekroom-global-ai-2026  
 **Inherited project:** https://github.com/tareq7/sellerpilot-ai — developed for and submitted to the separate Meta Global AI Developer Hackathon in October 2026.
 
@@ -10,7 +12,7 @@
 
 ## Planned adaptation — challenge selection not yet finalized
 
-After official problem statements go live on November 1, select one that fits stock-aware seller analytics, source-grounded AI research or safe approval-gated commerce workflows. Develop and test a new working prototype within the competition period; record an event-specific demonstration; and submit through HackCulture by November 15.
+Select an official problem statement that fits merchant research or safe, approval-based operations. Develop and test a new working prototype within the competition period; record an event-specific demonstration; and submit through HackCulture by November 15.
 
 ## Mandatory go/no-go checklist
 
