@@ -4,6 +4,7 @@ import {spawnSync} from "node:child_process";
 import {mkdtempSync,existsSync,rmSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
+import {fileURLToPath} from "node:url";
 import {runBenchmark,searchTavily,askBifrost,gateLive,normalizeGateway,boundedSources} from "./adapters.mjs";
 
 function fakeProviders({tavilyStatus=200,bifrostStatus=200,bifrostText="Official Bifrost documentation: https://docs.getbifrost.ai/overview"}={}) {
@@ -111,9 +112,11 @@ test("source ranking uses highest finite score regardless of input order",()=>{
   const src=boundedSources([
     {title:"Low",url:"https://test.invalid/low",content:"weak",score:0.1},
     {title:"High",url:"https://test.invalid/high",content:"strong",score:0.96},
+    {title:"Tie1",url:"https://test.invalid/tie1",content:"item",score:0.1},
+    {title:"Tie2",url:"https://test.invalid/tie2",content:"item",score:0.1},
     {title:"Unknown",url:"https://test.invalid/unknown",content:"text",score:null}
   ]);
-  assert.deepEqual(src.map(x=>x.title),["High","Low","Unknown"]);
+  assert.deepEqual(src.map(x=>x.title),["High","Low","Tie1","Tie2"]);
 });
 
 test("fact check ignores title and URL metadata if the excerpt has no fact",async()=>{
@@ -139,6 +142,21 @@ test("uncited and unrelated-citation model answers never pass as sourced",async(
   }
 });
 
+test("a longer URL sharing the source prefix is NOT a citation",async()=>{
+  const {fetcher}=fakeProviders({bifrostText:"See https://docs.getbifrost.ai/overview-other for a different page"});
+  const r=await runBenchmark("Explain the Bifrost gateway",{fetcher,mode:"test",env:{}});
+  assert.equal(r.results[0].ok,true);
+  assert.equal(r.results[1].ok,false);
+  assert.match(r.results[1].error,/citation/);
+});
+
+test("provided URL with trailing citation punctuation counts only exact source",async()=>{
+  const {fetcher}=fakeProviders({bifrostText:"Documented in (https://docs.getbifrost.ai/overview)."});
+  const r=await runBenchmark("Explain the Bifrost gateway",{fetcher,mode:"test",env:{}});
+  assert.equal(r.results[1].ok,true);
+  assert.deepEqual(r.results[1].sourceUrls,["https://docs.getbifrost.ai/overview"]);
+});
+
 test("streaming size cap rejects before buffering full oversized response",async()=>{
   let cancelled=0;
   const fetcher=async()=>new Response(new ReadableStream({
@@ -160,14 +178,27 @@ test("invalid live CLI query or scenario does not consume its evidence filename"
   try{
     for (const [name,args] of [
       ["short",["--query","x"]],
-      ["scenario",["--query","Public research topic","--scenario","unknown"]]
+      ["scenario",["--query","Public research topic","--scenario","unknown"]],
+      ["bad_gateway",["--query","Public research topic"]]
     ]){
       const target=join(dir,name+".json");
-      const cmd=spawnSync(process.execPath,["hackathon/geekroom/run.mjs","--live",...args,"--out",target],{
-        cwd:process.cwd(),env,encoding:"utf8",timeout:10000
+      const runPath=fileURLToPath(new URL("./run.mjs",import.meta.url));
+      const localEnv=name==="bad_gateway"?{...env,BIFROST_CHAT_URL:"https://remote.example/v1/chat/completions"}:env;
+      const cmd=spawnSync(process.execPath,[runPath,"--live",...args,"--out",target],{
+        cwd:process.cwd(),env:localEnv,encoding:"utf8",timeout:10000
       });
-      assert.notEqual(cmd.status,0);
+      assert.equal(cmd.status,1,"validation test must execute target CLI, not fail from missing script");
+      assert.match(cmd.stderr,/RUN STOPPED: (Query must be|Invalid scenario|Bifrost gateway must use)/);
+      assert.equal(existsSync(target),false,"invalid input must not reserve a permanent filename");
       assert.equal(existsSync(target),false,"invalid input must not reserve a permanent filename");
     }
+    const missing=join(dir,"missing.json");
+    const runPath=fileURLToPath(new URL("./run.mjs",import.meta.url));
+    const x=spawnSync(process.execPath,[runPath,"--live","--query","--out",missing],{
+      cwd:process.cwd(),env,encoding:"utf8",timeout:10000
+    });
+    assert.equal(x.status,2);
+    assert.match(x.stderr,/Usage:/);
+    assert.equal(existsSync(missing),false);
   }finally{rmSync(dir,{recursive:true,force:true});}
 });
