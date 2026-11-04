@@ -22,11 +22,11 @@ if(!process.argv.includes("--live")||!query||!output) {
     handle=await open(output,"wx",0o600);
     const result=await runBenchmark(query,{mode:"live",scenario,expectedFact});
     await handle.writeFile(JSON.stringify(result,null,2)+"\n");
-    if (!result.sponsorIntegrationVerified) {
-      console.error("INCOMPLETE: real Tavily/Bifrost provider chain not fully verified; evidence saved to "+output);
+    if (!result.liveProviderCallsCompleted) {
+      console.error("INCOMPLETE: real Tavily/Bifrost-routed provider calls did not both complete; evidence saved to "+output);
       process.exitCode=1;
     } else {
-      console.log("VERIFIED: both provider adapters returned through live endpoints; evidence at "+output);
+      console.log("LIVE CALLS COMPLETED: independently inspect Maxim Bifrost process/version and provider usage before claiming sponsor integration; evidence at "+output);
     }
   } catch(err) {
     // Never print provider bodies, headers, credential-bearing URLs or tokens.
