@@ -1,0 +1,30 @@
+name: Geek Room event adapter tests (offline only)
+on:
+  push:
+    branches: [main]
+    paths:
+      - "hackathon/geekroom/**"
+      - "package.json"
+      - ".github/workflows/geekroom-prototype.yml"
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prototype-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install deterministic dependencies
+        run: npm ci
+      - name: New Geek Room Tavily/Bifrost API-contract tests — mocked
+        run: npm run test:geekroom
+      - name: Inherited SellerPilot tests
+        run: npm test
+      - name: Inherited SellerPilot build
+        run: npm run build
