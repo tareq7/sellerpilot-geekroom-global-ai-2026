@@ -190,7 +190,6 @@ test("invalid live CLI query or scenario does not consume its evidence filename"
       assert.equal(cmd.status,1,"validation test must execute target CLI, not fail from missing script");
       assert.match(cmd.stderr,/RUN STOPPED: (Query must be|Invalid scenario|Bifrost gateway must use)/);
       assert.equal(existsSync(target),false,"invalid input must not reserve a permanent filename");
-      assert.equal(existsSync(target),false,"invalid input must not reserve a permanent filename");
     }
     const missing=join(dir,"missing.json");
     const runPath=fileURLToPath(new URL("./run.mjs",import.meta.url));
