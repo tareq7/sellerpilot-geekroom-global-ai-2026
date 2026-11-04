@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /** Real providers only. This command NEVER runs a mock benchmark. */
 import {open} from "node:fs/promises";
-import {runBenchmark,gateLive} from "./adapters.mjs";
+import {runBenchmark,gateLive,safeQuery} from "./adapters.mjs";
 
 function flag(name) {
   const i=process.argv.indexOf(name);
@@ -18,7 +18,11 @@ if(!process.argv.includes("--live")||!query||!output) {
   let handle;
   try {
     gateLive(process.env); // hard gate before even reserving a file
-    // Reserve the immutable evidence path BEFORE making paid/provider calls.
+    safeQuery(query);
+    if(!["normal","model_outage","broken_tool","misleading_source"].includes(scenario))
+      throw new Error("Invalid scenario");
+    if(expectedFact && expectedFact.length>120) throw new Error("Expected fact is too long");
+    // Reserve the immutable evidence path AFTER all local validation but BEFORE calls.
     handle=await open(output,"wx",0o600);
     const result=await runBenchmark(query,{mode:"live",scenario,expectedFact});
     await handle.writeFile(JSON.stringify(result,null,2)+"\n");
@@ -29,6 +33,12 @@ if(!process.argv.includes("--live")||!query||!output) {
       console.log("LIVE CALLS COMPLETED: independently inspect Maxim Bifrost process/version and provider usage before claiming sponsor integration; evidence at "+output);
     }
   } catch(err) {
+    if(handle) {
+      try { await handle.writeFile(JSON.stringify({
+        status:"INCOMPLETE",mode:"LIVE_PROVIDER",errorType:"ValidationOrProviderError",
+        note:"Do not retry an uncertain paid/provider call without checking usage records."
+      })+"\n"); } catch {}
+    }
     // Never print provider bodies, headers, credential-bearing URLs or tokens.
     console.error("RUN STOPPED: "+(err?.message?.includes("Live provider") ? err.message : "Validation, provider, or file operation failed. Inspect redacted evidence only."));
     process.exitCode=1;
