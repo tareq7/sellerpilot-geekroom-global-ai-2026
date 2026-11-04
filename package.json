@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "deploy": "wrangler deploy",
     "preview": "wrangler dev",
-    "build:api": "node scripts/build-api.mjs"
+    "build:api": "node scripts/build-api.mjs",
+    "test:geekroom": "node --test hackathon/geekroom/adapters.test.mjs"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",
