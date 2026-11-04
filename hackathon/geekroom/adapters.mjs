@@ -76,7 +76,8 @@ export async function askBifrost(query,sources,{fetcher=globalThis.fetch,env=pro
   const model=mode==="live"?env.BIFROST_MODEL:"test/bifrost-stub";
   const quoted=sources.map((s,i)=>["Source "+(i+1),s.url,s.content].join(" | ")).join("\n");
   const data=await jsonRequest(endpoint,{
-    method:"POST",headers:{"Content-Type":"application/json"},
+    method:"POST",headers:{"Content-Type":"application/json",
+      ...(mode==="live" && env.BIFROST_VIRTUAL_KEY?{"Authorization":"Bearer "+env.BIFROST_VIRTUAL_KEY}:{})},
     body:JSON.stringify({
       model,max_tokens:256,temperature:0,
       messages:[
@@ -113,7 +114,7 @@ export async function runBenchmark(query,{fetcher=globalThis.fetch,env=process.e
   if(!["normal","model_outage","broken_tool","misleading_source"].includes(scenario))throw Error("Unknown scenario");
   const start=Date.now();
   const result={mode:mode==="live"?"LIVE_PROVIDER":"MOCK_TEST_ONLY",scenario,query:safeQuery(query),startedUtc:new Date().toISOString(),
-    sponsorIntegrationVerified:false,estimatedCostUsd:null,results:[],networkCalls:0};
+    sponsorIntegrationVerified:false,liveProviderCallsCompleted:false,estimatedCostUsd:null,results:[],networkCalls:0};
   let sources;
   try {
     if(scenario==="broken_tool")throw new Error("Injected Tavily tool outage [test-only]");
@@ -143,6 +144,8 @@ export async function runBenchmark(query,{fetcher=globalThis.fetch,env=process.e
     result.results.push({adapter:"bifrost-routed",ok:false,success:null,modelCalls:scenario==="model_outage"?0:1,toolCalls:1,error:failureMessage(err)});
   }
   result.durationMs=Date.now()-start;
-  result.sponsorIntegrationVerified=mode==="live" && result.results.every(r=>r.ok) && result.networkCalls===2;
+  result.liveProviderCallsCompleted=mode==="live" && result.results.every(r=>r.ok) && result.networkCalls===2;
+  // An OpenAI-compatible localhost response alone cannot prove this process is genuine Maxim Bifrost.
+  result.sponsorIntegrationVerified=false; // verify actual gateway process/version independently
   return result;
 }
