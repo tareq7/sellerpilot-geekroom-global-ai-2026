@@ -10,7 +10,13 @@ I want SellerPilot to answer a seller’s question using sources they can check.
 
 > This repository was cloned with full Git history. The inherited UI, analytics logic, marketing assets, historical video, and existing tests are NOT a Geek Room submission. Any pre-existing code must be disclosed. HackCulture's code of conduct allows prior work only with disclosure of reused code and prior submissions; new qualifying work must be developed in this event window.
 
-## Planned adaptation — challenge selection not yet finalized
+## November 4 event-specific implementation (not yet final)
+
+**Chosen primary challenge:** Bifrost A#02 — Agent Benchmarking Platform, with Tavily retrieval as an optional integrated source-grounding capability. The separate [Geek Room adapter prototype and acceptance criteria](hackathon/geekroom/README.md) now includes an extractive Tavily baseline, a Bifrost-routed LLM agent contract, source citations, offline failure-injection tests and a strict free/no-overage live-call gate. The adapter was created during the Geek Room build window; the original SellerPilot dashboard is from Meta.
+
+**Do not confuse contract tests with real integration:** no real Bifrost process, observability session, or Tavily request through the new adapter has yet been verified. GitHub CI uses fake HTTP responses and costs no API credits. The final November 15 submission and demonstration remain pending.
+
+## Planned adaptation — remaining live integration gates
 
 Select an official problem statement that fits merchant research or safe, approval-based operations. Develop and test a new working prototype within the competition period; record an event-specific demonstration; and submit through HackCulture by November 15.
 
