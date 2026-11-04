@@ -113,12 +113,12 @@ export async function runBenchmark(query,{fetcher=globalThis.fetch,env=process.e
   if(!["normal","model_outage","broken_tool","misleading_source"].includes(scenario))throw Error("Unknown scenario");
   const start=Date.now();
   const result={mode:mode==="live"?"LIVE_PROVIDER":"MOCK_TEST_ONLY",scenario,query:safeQuery(query),startedUtc:new Date().toISOString(),
-    sponsorIntegrationVerified:mode==="live",estimatedCostUsd:null,results:[],networkCalls:0};
+    sponsorIntegrationVerified:false,estimatedCostUsd:null,results:[],networkCalls:0};
   let sources;
   try {
     if(scenario==="broken_tool")throw new Error("Injected Tavily tool outage [test-only]");
-    const t=await searchTavily(query,{fetcher,env,mode});
     result.networkCalls++;
+    const t=await searchTavily(query,{fetcher,env,mode});
     sources=t.sources;
     result.tavilyRequestId=t.providerRequestId;
   } catch(err){
@@ -136,12 +136,13 @@ export async function runBenchmark(query,{fetcher=globalThis.fetch,env=process.e
   result.results.push({adapter:"extractive-tavily",ok:true,success:evaluate(extracted,expectedFact),modelCalls:0,toolCalls:1,steps:1,tokens:null,answer:extracted,sourceUrls:sources.map(s=>s.url)});
   try {
     if(scenario==="model_outage")throw new Error("Injected Bifrost model outage [test-only]");
-    const b=await askBifrost(query,sources,{fetcher,env,mode});
     result.networkCalls++;
+    const b=await askBifrost(query,sources,{fetcher,env,mode});
     result.results.push({adapter:"bifrost-routed",ok:true,success:evaluate(b.answer,expectedFact),modelCalls:1,toolCalls:1,steps:2,tokens:b.tokenCounts,model:b.model,answer:b.answer,sourceUrls:sources.map(s=>s.url)});
   } catch(err) {
-    result.results.push({adapter:"bifrost-routed",ok:false,success:null,modelCalls:1,toolCalls:1,error:failureMessage(err)});
+    result.results.push({adapter:"bifrost-routed",ok:false,success:null,modelCalls:scenario==="model_outage"?0:1,toolCalls:1,error:failureMessage(err)});
   }
   result.durationMs=Date.now()-start;
+  result.sponsorIntegrationVerified=mode==="live" && result.results.every(r=>r.ok) && result.networkCalls===2;
   return result;
 }
