@@ -129,7 +129,7 @@ function failureMessage(e) {
   // Do not accidentally print errors with URL query tokens or secrets.
   const s=String(e?.message||"Unknown provider failure");
   if (s.startsWith("Provider returned HTTP "))return s.slice(0,80);
-  if (/gateway|model|no usable|size cap|unreadable|invalid JSON|disabled/i.test(s))return s.slice(0,140);
+  if (/gateway|model|no usable|size cap|unreadable|invalid JSON|citation|disabled/i.test(s))return s.slice(0,140);
   return "Unexpected provider failure";
 }
 /**
