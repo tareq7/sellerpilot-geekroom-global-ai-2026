@@ -112,7 +112,13 @@ export async function askBifrost(query,sources,{fetcher=globalThis.fetch,env=pro
   const answer=data?.choices?.[0]?.message?.content;
   if(typeof answer!=="string"||!answer.trim())throw new Error("Bifrost returned no readable answer");
   const boundedAnswer=answer.slice(0,2500);
-  const citedUrls=sources.filter(s=>boundedAnswer.includes(s.url)).map(s=>s.url);
+  // Compare whole URL tokens, not substring prefixes or merely source domains.
+  // Trim presentation punctuation only, then normalize as a complete URL.
+  const urlTokens=[...boundedAnswer.matchAll(/https?:\/\/[^\s<>"'()]+/g)]
+    .map(m=>m[0].replace(/[.,;!?]+$/g,""))
+    .map(u=>{ try { return new URL(u).href; } catch { return null; } })
+    .filter(Boolean);
+  const citedUrls=sources.filter(s=>urlTokens.includes(s.url)).map(s=>s.url);
   if(!citedUrls.length)throw new Error("Bifrost answer contains no supplied citation");
   const usage=data.usage&&typeof data.usage==="object"?data.usage:{};
   const pt=Number.isInteger(usage.prompt_tokens)&&usage.prompt_tokens>=0?usage.prompt_tokens:null;
