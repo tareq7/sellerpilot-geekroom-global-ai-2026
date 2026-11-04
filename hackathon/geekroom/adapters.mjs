@@ -35,19 +35,42 @@ function safeUrl(url) {
 }
 export function boundedSources(raw) {
   if (!Array.isArray(raw)) throw new Error("Search results are not an array");
-  return raw.slice(0,4).map(x=>({
+  return raw.map((x,pos)=>({
     title: typeof x?.title==="string"?x.title.slice(0,140):"Untitled",
     url:safeUrl(x?.url),
     content:typeof x?.content==="string"?x.content.slice(0,1200):"",
-    score:typeof x?.score==="number" && Number.isFinite(x.score)?x.score:null
-  })).filter(x=>x.url && x.content);
+    score:typeof x?.score==="number" && Number.isFinite(x.score)?x.score:null,
+    pos
+  })).filter(x=>x.url && x.content).sort((a,b)=>{
+    if(a.score===null && b.score!==null)return 1;
+    if(b.score===null && a.score!==null)return -1;
+    if(a.score!==b.score)return b.score-a.score;
+    return a.pos-b.pos;
+  }).slice(0,4).map(({pos,...source})=>source);
 }
 async function jsonRequest(url,options,fetcher) {
   const response=await fetcher(url,{...options,redirect:"error",signal:AbortSignal.timeout(12000)});
-  // Avoid unbounded JSON responses and accidental private data in diagnostics.
-  const text=await response.text();
-  if (text.length>MAX_BODY) throw new Error("Provider response exceeded the size cap");
-  if (!response.ok) throw new Error("Provider returned HTTP "+response.status);
+  if (!response.ok) {
+    try { await response.body?.cancel(); } catch {}
+    throw new Error("Provider returned HTTP "+response.status);
+  }
+  if(!response.body)throw new Error("Provider returned empty JSON body");
+  const reader=response.body.getReader();
+  const decoder=new TextDecoder("utf-8");
+  let bytes=0,text="";
+  try {
+    while(true){
+      const {done,value}=await reader.read();
+      if(done)break;
+      bytes+=value.byteLength;
+      if(bytes>MAX_BODY)throw new Error("Provider response exceeded the size cap");
+      text+=decoder.decode(value,{stream:true});
+    }
+    text+=decoder.decode();
+  } finally {
+    try { await reader.cancel(); } catch {}
+    reader.releaseLock();
+  }
   try { return JSON.parse(text); } catch { throw new Error("Provider returned invalid JSON"); }
 }
 function assertTransport(mode,fetcher,env) {
@@ -88,13 +111,19 @@ export async function askBifrost(query,sources,{fetcher=globalThis.fetch,env=pro
   },fetcher);
   const answer=data?.choices?.[0]?.message?.content;
   if(typeof answer!=="string"||!answer.trim())throw new Error("Bifrost returned no readable answer");
+  const boundedAnswer=answer.slice(0,2500);
+  const citedUrls=sources.filter(s=>boundedAnswer.includes(s.url)).map(s=>s.url);
+  if(!citedUrls.length)throw new Error("Bifrost answer contains no supplied citation");
   const usage=data.usage&&typeof data.usage==="object"?data.usage:{};
   const pt=Number.isInteger(usage.prompt_tokens)&&usage.prompt_tokens>=0?usage.prompt_tokens:null;
   const ct=Number.isInteger(usage.completion_tokens)&&usage.completion_tokens>=0?usage.completion_tokens:null;
-  return {answer:answer.slice(0,2500),model,tokenCounts:{input:pt,output:ct}};
+  return {answer:boundedAnswer,citedUrls,model,tokenCounts:{input:pt,output:ct}};
 }
 function evaluate(answer,expectedFact) {
-  return expectedFact ? answer.toLowerCase().includes(String(expectedFact).toLowerCase()) : null;
+  if(!expectedFact)return null;
+  // URLs can coincidentally contain the expected string; metadata is not evidence.
+  const contentOnly=answer.replace(/https?:\/\/[^\s)]+/g,"");
+  return contentOnly.toLowerCase().includes(String(expectedFact).toLowerCase());
 }
 function failureMessage(e) {
   // Do not accidentally print errors with URL query tokens or secrets.
@@ -134,12 +163,12 @@ export async function runBenchmark(query,{fetcher=globalThis.fetch,env=process.e
   }
   const top=sources[0];
   const extracted=top.title+": "+top.content.slice(0,400)+" ("+top.url+")";
-  result.results.push({adapter:"extractive-tavily",ok:true,success:evaluate(extracted,expectedFact),modelCalls:0,toolCalls:1,steps:1,tokens:null,answer:extracted,sourceUrls:sources.map(s=>s.url)});
+  result.results.push({adapter:"extractive-tavily",ok:true,success:evaluate(top.content.slice(0,400),expectedFact),modelCalls:0,toolCalls:1,steps:1,tokens:null,answer:extracted,sourceUrls:[top.url],retrievedSourceUrls:sources.map(s=>s.url)});
   try {
     if(scenario==="model_outage")throw new Error("Injected Bifrost model outage [test-only]");
     result.networkCalls++;
     const b=await askBifrost(query,sources,{fetcher,env,mode});
-    result.results.push({adapter:"bifrost-routed",ok:true,success:evaluate(b.answer,expectedFact),modelCalls:1,toolCalls:1,steps:2,tokens:b.tokenCounts,model:b.model,answer:b.answer,sourceUrls:sources.map(s=>s.url)});
+    result.results.push({adapter:"bifrost-routed",ok:true,success:evaluate(b.answer,expectedFact),modelCalls:1,toolCalls:1,steps:2,tokens:b.tokenCounts,model:b.model,answer:b.answer,sourceUrls:b.citedUrls,retrievedSourceUrls:sources.map(s=>s.url)});
   } catch(err) {
     result.results.push({adapter:"bifrost-routed",ok:false,success:null,modelCalls:scenario==="model_outage"?0:1,toolCalls:1,error:failureMessage(err)});
   }
